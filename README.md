@@ -1,129 +1,133 @@
 # pusula_talent_academy
 This repo was created for the solutions of the database case study questions given within the scope of Pusula Talent Academy 2025.
---------------------------------------------------------------------------------------------------------------
-/* Question 1: Performance & Scalability Analysis in Hospital Data
-Scenario:
-A table below has been used for 5 years in a Hospital Information Management System (HBYS). Each day, about
-25,000 rows are inserted.
+# Pusula Talent Academy 2025 - Database Case Study Solutions
+
+## Question 1: Performance & Scalability Analysis in Hospital Data
+### Scenario
+A table has been used for 5 years in a Hospital Information Management System (HBYS).  
+Each day, about 25,000 rows are inserted.  
 Recently, queries on this table have become slower and users have reported difficulty accessing past records.
 
+```sql
 CREATE TABLE HastaIslemLog (
- Id INT IDENTITY(1,1) PRIMARY KEY,
- HastaId INT,
- IslemTarihi DATETIME,
- IslemKodu NVARCHAR(20),
- Aciklama NVARCHAR(500)
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    HastaId INT,
+    IslemTarihi DATETIME,
+    IslemKodu NVARCHAR(20),
+    Aciklama NVARCHAR(500)
 );
+1. Reasons for performance degradation
+Continuous insertion into the same table → Table size grows significantly over time.
 
-#Question:1. What could be the reasons for the performance degradation?
-a) Continuous insertion into the same table  
-Since data has been inserted into the same table every day for 5 years,  
-the data volume has grown significantly, causing performance issues.  
+The column Aciklama NVARCHAR(500) increases row size and query cost.
 
-b) The "Aciklama" column is defined as NVARCHAR(500).  
-This wide column makes queries heavier, especially since there is no indexing.  
-If no filtering is applied, the query engine has to scan all rows and read long texts,  
-which slows down performance.
+Lack of proper indexing → Queries result in full table scans.
 
-2. What improvements would you suggest for better sustainability?
-a) Create archive tables based on "IslemTarihi"  
-For example, move records before 2023 into another table and delete them from the main table.  
-This will reduce the data volume in `HastaIslemLog` and improve query performance.  
+2. Suggested improvements
+Archiving: Move old records into archive tables (e.g., yearly partitions).
 
-b) Implement indexing  
-Why indexing is needed can be explained simply:  
-For example:
+Indexing: Create indexes on frequently queried columns. Example:
 
-SELECT * FROM HastaIslemLog WHERE HastaId = 864;
-Without an index, the query engine scans the entire table to find the matching row,
-whether it is in the 10th row or the 1,000,000th row.
-
-With an index:
+sql
+Kodu kopyala
 CREATE NONCLUSTERED INDEX IX_HastaId ON HastaIslemLog (HastaId);
-SQL Server keeps track of the sorted values and their positions.
-Instead of scanning the whole table, it can jump directly to the required rows.
-This improves read performance significantly.
-Indexes can also be added on IslemTarihi or IslemKodu, depending on common queries.
-For example, queries like "all operations in 2024" or "all patients with MR scans"
-will run much faster with indexes.
+CREATE NONCLUSTERED INDEX IX_IslemTarihi ON HastaIslemLog (IslemTarihi);
+This avoids full table scans and allows faster lookups.
 
-However, indexes also bring maintenance overhead:
-every insert will update both the table and its indexes.
-Therefore, indexes should be chosen carefully based on frequently used queries.
+3. Was using the table like this for 5 years correct?
+Pros: Simple schema, easy to insert data.
 
-3.Do you think using the table in this way for 5 years was the correct approach? Why or why not?
-Storing all the data in a single table over years makes query writing simpler.
-However, as the data volume grows, queries become slower and harder to execute.
-For example, searching for a specific patient record becomes much harder
-when the table is very large.
----------------------------------------------------------------------------------------------------
-Scenario:
+Cons: Query performance decreases as data volume grows.
+
+Conclusion: Long-term, a single table is not sustainable for heavy queries.
+
+Question 2: Query Optimization
+Scenario
 The following query is frequently used by end users:
+
+sql
+Kodu kopyala
 SELECT * 
 FROM HastaKayit 
-WHERE LOWER(AdSoyad) LIKE '%ahmet%' AND YEAR(KayitTarihi) = 2024
-
-#Question:2.What performance problems might arise from this query?
-The use of the YEAR() function prevents index usage on the KayitTarihi column.
-The use of LOWER() function also prevents index usage on the AdSoyad column.
-LIKE '%ahmet%' with a leading wildcard forces a full scan instead of index seek.
-
-SELECT * loads all columns unnecessarily, increasing I/O.
-
-How would you optimize this query and/or the table structure?
-a) Replace the YEAR() function with a date range filter:
-SELECT * 
-FROM HastaKayit
 WHERE LOWER(AdSoyad) LIKE '%ahmet%' 
+  AND YEAR(KayitTarihi) = 2024;
+1. Problems with the query
+YEAR(KayitTarihi) prevents index usage.
+
+LOWER(AdSoyad) prevents index usage.
+
+LIKE '%ahmet%' forces full scan.
+
+SELECT * loads unnecessary columns.
+
+2. Optimized query
+sql
+Kodu kopyala
+SELECT AdSoyad, KayitTarihi 
+FROM HastaKayit
+WHERE AdSoyad LIKE 'ahmet%' 
   AND KayitTarihi >= '2024-01-01'
   AND KayitTarihi < '2025-01-01';
-This allows the database to use indexes on KayitTarihi.
+Replace YEAR() with a date range.
 
-b) Similar to YEAR(), the LOWER() function reduces performance.
-A persisted computed column (e.g., AdSoyadLower) could be added with an index
-to improve performance for case-insensitive searches.
+Avoid LOWER() → Use computed column with index if case-insensitive search is needed.
 
-3.Are there any improvements that could be made on the application side?
-Implement search suggestions or autocomplete to avoid %...% queries.
-Use prefix searches (LIKE 'ahmet%') when possible.
+Avoid %...% when possible, prefer prefix search.
 
---------------------------------------------------------------------------------------------------------
+3. Application-side improvements
+Implement autocomplete or search suggestions to reduce %...% queries.
 
-# Question 3: T-SQL Query Challenge (Hospital Sales Example)
- Scenario:
-Pusula Talent Academy 2025 - SQL & DBA Case Study
- In the HBYS system, the hospital pharmacy sells products. Sales and product details are stored in the following tables:
- 
- CREATE TABLE Urun (
+Fetch only needed columns instead of SELECT *.
+
+Question 3: T-SQL Query Challenge (Hospital Sales Example)
+Scenario
+The hospital pharmacy sells products. Sales and product details are stored in the following tables:
+
+sql
+Kodu kopyala
+CREATE TABLE Urun (
     UrunID INT PRIMARY KEY,
     UrunAdi NVARCHAR(100),
     Fiyat DECIMAL(10,2)
- );
- CREATE TABLE Satis (
+);
+
+CREATE TABLE Satis (
     SatisID INT PRIMARY KEY,
     UrunID INT FOREIGN KEY REFERENCES Urun(UrunID),
     Adet INT,
     SatisTarihi DATETIME
- );
- Sample Data:-- Urun
- (1, 'Laptop', 15000.00), (2, 'Mouse', 250.00), (3, 'Klavye', 450.00)-- Satis
- (1, 1, 2, '2024-01-10'), (2, 2, 5, '2024-01-15'), (3, 1, 1, '2024-02-20'),
- (4, 3, 3, '2024-03-05'), (5, 2, 7, '2024-03-25'), (6, 3, 2, '2024-04-12')
- Tasks:
- 1. Write a query that returns, per year and per product, the total sales amount (Fiyat * Adet) and total quantity.
-    ```sql
+);
+Sample Data:
+
+sql
+Kodu kopyala
+-- Urun
+(1, 'Laptop', 15000.00), 
+(2, 'Mouse', 250.00), 
+(3, 'Klavye', 450.00)
+
+-- Satis
+(1, 1, 2, '2024-01-10'),
+(2, 2, 5, '2024-01-15'),
+(3, 1, 1, '2024-02-20'),
+(4, 3, 3, '2024-03-05'),
+(5, 2, 7, '2024-03-25'),
+(6, 3, 2, '2024-04-12')
+Task 1: Total sales amount and quantity per year & product
+sql
+Kodu kopyala
 SELECT 
     YEAR(S.SatisTarihi) AS SalesYear,
     U.UrunAdi,
     SUM(S.Adet * U.Fiyat) AS TotalSalesAmount,
     SUM(S.Adet) AS TotalQuantity
-FROM Satis s
-JOIN Urun u ON s.UrunID = u.UrunID
-GROUP BY YEAR(s.SatisTarihi), u.UrunAdi
-ORDER BY TotalSalesAmount DESC
-
- 3. For each year, identify the product with the highest sales amount.
-    ```sql
+FROM Satis S
+JOIN Urun U ON S.UrunID = U.UrunID
+GROUP BY YEAR(S.SatisTarihi), U.UrunAdi
+ORDER BY TotalSalesAmount DESC;
+Task 2: Product with highest sales amount per year
+sql
+Kodu kopyala
 WITH YearlySales AS (
     SELECT 
         YEAR(S.SatisTarihi) AS SalesYear,
@@ -139,12 +143,11 @@ WHERE ys.TotalSalesAmount = (
     SELECT MAX(TotalSalesAmount)
     FROM YearlySales y2
     WHERE y2.SalesYear = ys.SalesYear
-)
-
- 4. Write a query to list products that were never sold
-    ```sql
-  SELECT U.UrunID, U.UrunAdi
+);
+Task 3: Products never sold
+sql
+Kodu kopyala
+SELECT U.UrunID, U.UrunAdi
 FROM Urun U
 LEFT JOIN Satis S ON U.UrunID = S.UrunID
-WHERE S.UrunID IS NULL
----------------------------------------------------------------------------------------------------
+WHERE S.UrunID IS NULL;
