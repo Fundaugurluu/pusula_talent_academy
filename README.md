@@ -52,6 +52,7 @@ every insert will update both the table and its indexes.
 Therefore, indexes should be chosen carefully based on frequently used queries.
 
 ##3.Do you think using the table in this way for 5 years was the correct approach? Why or why not?
+
 Storing all the data in a single table over years makes query writing simpler.
 However, as the data volume grows, queries become slower and harder to execute.
 For example, searching for a specific patient record becomes much harder
