@@ -121,7 +121,7 @@ FROM Satis s
 JOIN Urun u ON s.UrunID = u.UrunID
 GROUP BY YEAR(s.SatisTarihi), u.UrunAdi
 ORDER BY TotalSalesAmount DESC
-
+        
  3. For each year, identify the product with the highest sales amount.
     ```sql
 WITH YearlySales AS (
@@ -140,6 +140,7 @@ WHERE ys.TotalSalesAmount = (
     FROM YearlySales y2
     WHERE y2.SalesYear = ys.SalesYear
 )
+    ```sql
 
  4. Write a query to list products that were never sold
     ```sql
@@ -147,4 +148,5 @@ WHERE ys.TotalSalesAmount = (
 FROM Urun U
 LEFT JOIN Satis S ON U.UrunID = S.UrunID
 WHERE S.UrunID IS NULL
+    ```sql
 --------------------------------------------------------------------------------------------------- bana bunu düzenleyeip düzgün gözükcek şekilde yazıop atsana
