@@ -1,7 +1,7 @@
 # pusula_talent_academy
 This repo was created for the solutions of the database case study questions given within the scope of Pusula Talent Academy 2025.
 --------------------------------------------------------------------------------------------------------------
-#Question 1: Performance & Scalability Analysis in Hospital Data
+# Question 1: Performance & Scalability Analysis in Hospital Data
 Scenario:
 A table below has been used for 5 years in a Hospital Information Management System (HBYS). Each day, about
 25,000 rows are inserted.
@@ -15,22 +15,22 @@ CREATE TABLE HastaIslemLog (
  Aciklama NVARCHAR(500)
 );
 ```
-##1. What could be the reasons for the performance degradation?
+## 1. What could be the reasons for the performance degradation?
 ###a) Continuous insertion into the same table  
 Since data has been inserted into the same table every day for 5 years,  
 the data volume has grown significantly, causing performance issues.  
 
-###b) The "Aciklama" column is defined as NVARCHAR(500).  
+### b) The "Aciklama" column is defined as NVARCHAR(500).  
 This wide column makes queries heavier, especially since there is no indexing.  
 If no filtering is applied, the query engine has to scan all rows and read long texts,  
 which slows down performance.
 
-##2. What improvements would you suggest for better sustainability?
-###a) Create archive tables based on "IslemTarihi"  
+## 2. What improvements would you suggest for better sustainability?
+### a) Create archive tables based on "IslemTarihi"  
 For example, move records before 2023 into another table and delete them from the main table.  
 This will reduce the data volume in `HastaIslemLog` and improve query performance.  
 
-###b) Implement indexing  
+### b) Implement indexing  
 Why indexing is needed can be explained simply:  
 For example:
 
@@ -51,13 +51,14 @@ However, indexes also bring maintenance overhead:
 every insert will update both the table and its indexes.
 Therefore, indexes should be chosen carefully based on frequently used queries.
 
-##3.Do you think using the table in this way for 5 years was the correct approach? Why or why not?
+## 3.Do you think using the table in this way for 5 years was the correct approach? Why or why not?
 
 Storing all the data in a single table over years makes query writing simpler.
 However, as the data volume grows, queries become slower and harder to execute.
 For example, searching for a specific patient record becomes much harder
 when the table is very large.
 ---------------------------------------------------------------------------------------------------
+# Question 2: Index Strategy & Query Optimization Thinking
 Scenario:
 The following query is frequently used by end users
 ```sql
@@ -65,15 +66,15 @@ SELECT *
 FROM HastaKayit 
 WHERE LOWER(AdSoyad) LIKE '%ahmet%' AND YEAR(KayitTarihi) = 2024
 ```
-#Question:2.What performance problems might arise from this query?
+## 1.What performance problems might arise from this query?
 The use of the YEAR() function prevents index usage on the KayitTarihi column.
 The use of LOWER() function also prevents index usage on the AdSoyad column.
 LIKE '%ahmet%' with a leading wildcard forces a full scan instead of index seek.
 
 SELECT * loads all columns unnecessarily, increasing I/O.
 
-##1.How would you optimize this query and/or the table structure?
-###a) Replace the YEAR() function with a date range filter:
+## 2.How would you optimize this query and/or the table structure?
+### a) Replace the YEAR() function with a date range filter:
 ```sql
 SELECT * 
 FROM HastaKayit
@@ -83,7 +84,7 @@ WHERE LOWER(AdSoyad) LIKE '%ahmet%'
 ```
 This allows the database to use indexes on KayitTarihi.
 
-###b) Similar to YEAR(), the LOWER() function reduces performance.
+### b) Similar to YEAR(), the LOWER() function reduces performance.
 A persisted computed column (e.g., AdSoyadLower) could be added with an index
 to improve performance for case-insensitive searches.
 
