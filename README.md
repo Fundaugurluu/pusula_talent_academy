@@ -15,8 +15,7 @@ CREATE TABLE HastaIslemLog (
  Aciklama NVARCHAR(500)
 );
 
-Question:
-1. What could be the reasons for the performance degradation?
+#Question:1. What could be the reasons for the performance degradation?
 a) Continuous insertion into the same table  
 Since data has been inserted into the same table every day for 5 years,  
 the data volume has grown significantly, causing performance issues.  
@@ -64,8 +63,7 @@ SELECT *
 FROM HastaKayit 
 WHERE LOWER(AdSoyad) LIKE '%ahmet%' AND YEAR(KayitTarihi) = 2024
 
-Question:
-2.What performance problems might arise from this query?
+#Question:2.What performance problems might arise from this query?
 The use of the YEAR() function prevents index usage on the KayitTarihi column.
 The use of LOWER() function also prevents index usage on the AdSoyad column.
 LIKE '%ahmet%' with a leading wildcard forces a full scan instead of index seek.
@@ -91,7 +89,7 @@ Use prefix searches (LIKE 'ahmet%') when possible.
 
 --------------------------------------------------------------------------------------------------------
 
- Question 3: T-SQL Query Challenge (Hospital Sales Example)
+# Question 3: T-SQL Query Challenge (Hospital Sales Example)
  Scenario:
 Pusula Talent Academy 2025 - SQL & DBA Case Study
  In the HBYS system, the hospital pharmacy sells products. Sales and product details are stored in the following tables:
@@ -113,6 +111,7 @@ Pusula Talent Academy 2025 - SQL & DBA Case Study
  (4, 3, 3, '2024-03-05'), (5, 2, 7, '2024-03-25'), (6, 3, 2, '2024-04-12')
  Tasks:
  1. Write a query that returns, per year and per product, the total sales amount (Fiyat * Adet) and total quantity.
+    ```sql
 SELECT 
     YEAR(S.SatisTarihi) AS SalesYear,
     U.UrunAdi,
@@ -123,7 +122,8 @@ JOIN Urun u ON s.UrunID = u.UrunID
 GROUP BY YEAR(s.SatisTarihi), u.UrunAdi
 ORDER BY TotalSalesAmount DESC
 
- 2. For each year, identify the product with the highest sales amount.
+ 3. For each year, identify the product with the highest sales amount.
+    ```sql
 WITH YearlySales AS (
     SELECT 
         YEAR(S.SatisTarihi) AS SalesYear,
@@ -141,7 +141,8 @@ WHERE ys.TotalSalesAmount = (
     WHERE y2.SalesYear = ys.SalesYear
 )
 
- 3. Write a query to list products that were never sold
+ 4. Write a query to list products that were never sold
+    ```sql
   SELECT U.UrunID, U.UrunAdi
 FROM Urun U
 LEFT JOIN Satis S ON U.UrunID = S.UrunID
